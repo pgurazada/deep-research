@@ -73,7 +73,7 @@ async def root():
 async def answer(query: Query):
     try:
         result = await web_search_agent_async(query.text)
-        log_interaction(query.text, result)
+        log_interaction(query.text, str(result))
         return {
             "status": "success",
             "data": result

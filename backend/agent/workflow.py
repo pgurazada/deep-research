@@ -161,17 +161,19 @@ class ReflectionWebAgent(dspy.Module):
         self.answer_generator = dspy.ChainOfThought(AnswerGeneratorInstructions)
 
 
-    def forward(self, research_topic: str) -> str:
+    def forward(self, research_topic: str) -> dict:
         """
         Main workflow for the research agent.
         Takes a research topic and returns a comprehensive answer.
         """
-
+        steps = []
+        steps.append({"type": "Generating Search Queries", "content": f"Generating queries for: {research_topic}"})
         # Step 1: Generate search queries
         query_writer_output = self.query_writer(research_topic=research_topic, num_queries=self.num_queries)
         search_queries = query_writer_output.search_queries
 
         while self.explore_more and self.iteration_count < self.max_iterations:
+            steps.append({"type": "Web Research", "content": f"Gathering web results for: {search_queries}"})
             print(f"Iteration {self.iteration_count + 1} for topic: {research_topic}")
             self.iteration_count += 1
 
@@ -184,6 +186,7 @@ class ReflectionWebAgent(dspy.Module):
             self.summaries += search_output.findings
 
             # Step 3: Reflect on findings and identify knowledge gaps
+            steps.append({"type": "Reflection", "content": "Reflecting on findings and identifying knowledge gaps."})
             reflection = self.reflection(
                 research_topic=research_topic,
                 summaries=self.summaries
@@ -196,13 +199,17 @@ class ReflectionWebAgent(dspy.Module):
                 search_queries = reflection.follow_up_queries
 
         # Step 4: Generate final answer based on findings
+        steps.append({"type": "Final Answer", "content": "Synthesizing final answer."})
         output = self.answer_generator(
             research_topic=research_topic,
             summaries=self.summaries
         )
 
-        return output.answer
+        return {
+            "final_answer": output.answer,
+            "steps": steps
+        }
     
 if __name__ == "__main__":
-    agent = ReflectionWebAgent(max_iterations=5, num_queries=3)
+    agent = ReflectionWebAgent(max_iterations=3, num_queries=3)
     agent.save('backend/output/deep-research-agent', save_program=True)
