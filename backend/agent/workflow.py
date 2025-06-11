@@ -147,12 +147,12 @@ class AnswerGeneratorInstructions(dspy.Signature):
 
 
 class ReflectionWebAgent(dspy.Module):
-    def __init__(self):
+    def __init__(self, max_iterations: int = 2, num_queries: int = 2):
         super().__init__()
 
         self.explore_more = True
-        self.max_iterations = 2
-        self.num_queries = 2
+        self.max_iterations = max_iterations
+        self.num_queries = num_queries
         self.iteration_count = 0
         self.summaries = ''
         self.query_writer = dspy.ChainOfThought(QueryWriterInstructions)
@@ -203,9 +203,6 @@ class ReflectionWebAgent(dspy.Module):
 
         return output.answer
     
-user_query = 'Is Starlink available in India?'
-agent = ReflectionWebAgent()
-result = agent(user_query)
-print(f"User Query: {user_query}")
-print(f"Final Answer: {result}")
-print(f"Summaries: {agent.summaries}")
+if __name__ == "__main__":
+    agent = ReflectionWebAgent(max_iterations=5, num_queries=3)
+    agent.save('backend/output/deep-research-agent', save_program=True)
